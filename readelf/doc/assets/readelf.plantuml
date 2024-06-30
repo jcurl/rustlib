@@ -1,0 +1,89 @@
+@startuml readelf
+
++class ReadElf {
+    .. <<fields>> ..
+    +class: Class
+    +data: Endian
+    +version: u32
+    +osabi: OsAbi
+    +abi_version: u8
+    +exec_type: ExecutableType
+    +machine: Machine
+    +entry: u64
+    +flags: u32
+    .. <<methods>> ..
+    +open(buffer: &[u8]): Option<ReadElf>
+    +open_file<P: AsRef<Path>>(path: P): Option<ReadElf>
+}
+
++enum Endian {
+    .. <<methods>> ..
+    +try_from(v: u8): Result<Endian, ()>
+    .. <<variants>> ..
+    +Little = 1
+    +Big = 2
+}
+
++enum Class {
+    .. <<methods>> ..
+    +try_from(v: u8): Result<Class, ()>
+    .. <<variants>> ..
+    +Elf32 = 1
+    +Elf64 = 2
+    +Unknown(value: u8)
+}
+
++class OsAbi as "OsAbi\n(ELFOSABI_*)" {
+    .. <<methods>> ..
+    +os_abi(): u8
+    +from(v: u8): OsAbi
+    +to_string()
+    .. <<constants>> ..
+    +NONE = 0
+    +HPUX = 1
+    +NETBSD = 2
+    +LINUX = 3
+    +GNUHURD = 4
+    +SOLARIS = 6
+    +AIX = 7
+    +IRIX = 8
+}
+
++enum ExecutableType as "ExecutableType\n(ET_*)" {
+    .. <<methods>> ..
+    +from(v: u16): ExecutableType
+    +to_string()
+    .. <<constants>> ..
+    +ET_LOOS = 0xFE00
+    +ET_HIOS = 0xFEFF
+    +ET_LOPROC = 0xFF00
+    +ET_HIPROC = 0xFFFF
+    .. <<variants>> ..
+    +None = ET_NONE = 0
+    +Relocatable = ET_REL = 1
+    +Executable = ET_EXEC = 2
+    +Shared = ET_DYN = 3
+    +Core = ET_CORE = 4
+    +Unknown(value: u16)
+}
+
++class Machine as "Machine\n(EM_*)" {
+    .. <<methods>> ..
+    +machine(): u16
+    +from(v: u16): Machine
+    +to_string()
+    .. <<constants>> ..
+    None = EM_NONE = x0000
+    i386 = EM_386 = 0x0003
+    Arm = EM_ARM = 0x0028
+    x86_64 = EM_X86_64 = 0x003E
+    Aarch64 = EM_AARCH64 = 0x00B7
+    Unknown(value: 16)
+}
+
+ReadElf *-d- Endian
+ReadElf *-d- Class
+ReadElf *-d- OsAbi
+ReadElf *-d- ExecutableType
+ReadElf *-d- Machine
+@enduml

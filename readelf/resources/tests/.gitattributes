@@ -1,0 +1,4 @@
+elf/**      binary
+
+# the `source` macro is defined in the top level to unset binary.
+elf/**/*.md    source

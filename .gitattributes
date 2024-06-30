@@ -1,0 +1,16 @@
+## Attributes
+
+# Use only to override binary, to restore it to the default.
+[attr]source !binary text
+
+
+## Rules
+
+*           text=auto
+
+*.txt       text
+*.md        text
+*.rs        text
+*.lock      text
+*.toml      text
+*.json      text

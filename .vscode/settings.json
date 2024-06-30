@@ -1,0 +1,14 @@
+{
+    "spellright.language": [
+        "en_US"
+    ],
+    "spellright.documentTypes": [
+        "markdown",
+        "latex",
+        "plaintext"
+    ],
+    "plantuml.diagramsRoot": "",
+    "plantuml.exportConcurrency": 1,
+    "plantuml.exportFormat": "svg",
+    "plantuml.exportOutDir": "."
+}

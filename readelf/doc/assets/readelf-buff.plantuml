@@ -1,0 +1,43 @@
+@startuml readelf_buffer
+
++class ReadElf {
+    .. <<methods>> ..
+    +from_slice(buffer: &[u8]): Option<ReadElf>
+    +from_vec(buffer: Vec<u8>): Option<ReadElf>
+    +open<P: AsRef<Path>>(path: P): Option<ReadElf>
+}
+
++interface BinParser {
+    +get_u8(offset: u64, Endian: e): Option<u8>
+    +get_u16(offset: u64, Endian: e): Option<u16>
+    +get_u32(offset: u64, Endian: e): Option<u32>
+    +get_u64(offset: u64, Endian: e): Option<u64>
+    +get_usize(offset: u64, Endian: e, Class: c): Option<u64>
+}
+
++class slice {
+    +get_u8(offset: u64, Endian: e): Option<u8>
+    +get_u16(offset: u64, Endian: e): Option<u16>
+    +get_u32(offset: u64, Endian: e): Option<u32>
+    +get_u64(offset: u64, Endian: e): Option<u64>
+}
+
++class vecbuffer {
+    +get_u8(offset: u64, Endian: e): Option<u8>
+    +get_u16(offset: u64, Endian: e): Option<u16>
+    +get_u32(offset: u64, Endian: e): Option<u32>
+    +get_u64(offset: u64, Endian: e): Option<u64>
+}
+
++class file {
+    +get_u8(offset: u64, Endian: e): Option<u8>
+    +get_u16(offset: u64, Endian: e): Option<u16>
+    +get_u32(offset: u64, Endian: e): Option<u32>
+    +get_u64(offset: u64, Endian: e): Option<u64>
+}
+
+ReadElf *-d- BinParser
+BinParser <|.. slice
+BinParser <|.. vecbuffer
+BinParser <|.. file
+@enduml
