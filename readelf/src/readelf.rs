@@ -1,6 +1,7 @@
 use crate::binparser;
 use crate::{Class, Endian, ExecutableType, Machine, OsAbi};
 use std::fmt;
+use std::path::Path;
 
 /// Properties of an ELF file when loaded into memory.
 ///
@@ -224,6 +225,15 @@ impl<'elf> ReadElf<'elf> {
         let p = Box::new(binparser::VecBuffer::new(buffer));
         Self::from_parser(p)
     }
+
+    /// Interpret the ELF file from disk.
+    ///
+    /// This method opens the file on disk and uses seeks to access the file.
+    /// This allows to open very large ELF files also on 32-bit systems.
+    pub fn open<P: AsRef<Path>>(path: P) -> Option<ReadElf<'elf>> {
+        let p = Box::new(binparser::File::open(path)?);
+        Self::from_parser(p)
+    }
 }
 
 #[cfg(test)]
@@ -270,6 +280,22 @@ mod tests {
     #[test]
     fn powerpc_exe_bash_vec() {
         let r = test_resource(&["elf", "debian-8.11.0-powerpc-netinst", "bash"]);
+
+        assert_eq!(r.class, Class::Elf32);
+        assert_eq!(r.data, Endian::Big);
+        assert_eq!(r.version, 1);
+        assert_eq!(r.osabi.os_abi(), 0);
+        assert_eq!(r.abi_version, 0);
+        assert_eq!(r.exec_type, ExecutableType::Executable);
+        assert_eq!(r.machine.machine(), Machine::PPC);
+        assert_eq!(r.entry, 0x1001ABC8);
+        assert_eq!(r.flags, 0x00000000);
+    }
+
+    #[test]
+    fn powerpc_exe_bash_file() {
+        let path = test_resource_path(&["elf", "debian-8.11.0-powerpc-netinst", "bash"]);
+        let r = ReadElf::open(path).unwrap();
 
         assert_eq!(r.class, Class::Elf32);
         assert_eq!(r.data, Endian::Big);

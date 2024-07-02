@@ -88,11 +88,16 @@ pub(crate) struct ElfHeader {
     pub(crate) flags: u32,
 }
 
-pub fn load_elf_file<'elf>(elf_file: &str) -> ReadElf<'elf> {
+pub fn load_elf_file_vec<'elf>(elf_file: &str) -> ReadElf<'elf> {
     let test_path = test_resource_path(elf_file);
     let elf_file = std::fs::read(test_path).unwrap();
 
     ReadElf::from_vec(elf_file).unwrap()
+}
+
+pub fn load_elf_file<'elf>(elf_file: &str) -> ReadElf<'elf> {
+    let test_path = test_resource_path(elf_file);
+    ReadElf::open(test_path).unwrap()
 }
 
 pub fn test_resource_path(path: &str) -> PathBuf {

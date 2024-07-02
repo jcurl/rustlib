@@ -15,21 +15,24 @@
     +get_usize(offset: u64, Endian: e, Class: c): Option<u64>
 }
 
-+class slice {
+~class Slice {
+    ~new(buffer: &[u8]): Slice
     +get_u8(offset: u64, Endian: e): Option<u8>
     +get_u16(offset: u64, Endian: e): Option<u16>
     +get_u32(offset: u64, Endian: e): Option<u32>
     +get_u64(offset: u64, Endian: e): Option<u64>
 }
 
-+class vecbuffer {
+~class VecBuffer {
+    ~new(buffer: Vec<u8>): VecBuffer
     +get_u8(offset: u64, Endian: e): Option<u8>
     +get_u16(offset: u64, Endian: e): Option<u16>
     +get_u32(offset: u64, Endian: e): Option<u32>
     +get_u64(offset: u64, Endian: e): Option<u64>
 }
 
-+class file {
+~class File {
+    ~open<P: AsRef<Path>>(path: P): Option<File>
     +get_u8(offset: u64, Endian: e): Option<u8>
     +get_u16(offset: u64, Endian: e): Option<u16>
     +get_u32(offset: u64, Endian: e): Option<u32>
@@ -37,7 +40,7 @@
 }
 
 ReadElf *-d- BinParser
-BinParser <|.. slice
-BinParser <|.. vecbuffer
-BinParser <|.. file
+BinParser <|.. Slice
+BinParser <|.. VecBuffer
+BinParser <|.. File
 @enduml

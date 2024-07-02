@@ -12,8 +12,9 @@
     +entry: u64
     +flags: u32
     .. <<methods>> ..
-    +open(buffer: &[u8]): Option<ReadElf>
-    +open_file<P: AsRef<Path>>(path: P): Option<ReadElf>
+    +from_slice(buffer: &[u8]): Option<ReadElf>
+    +from_vec(buffer: Vec<u8>): Option<ReadElf>
+    +open<P: AsRef<Path>>(path: P): Option<ReadElf>
 }
 
 +enum Endian {

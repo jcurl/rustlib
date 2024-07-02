@@ -55,6 +55,7 @@ pub(crate) trait BinParser {
     /// # Returns
     ///
     /// If the `offset` is out of range, then `None` is returned.
+    #[inline(always)]
     fn get_usize(&self, offset: u64, e: Endian, c: Class) -> Option<u64> {
         match c {
             Class::Elf32 => self.get_u32(offset, e).map(|v| v as u64),

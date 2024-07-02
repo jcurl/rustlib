@@ -18,7 +18,7 @@ fn read_elf_headers() {
 
     for elf in config.elf_headers.iter() {
         println!("Testing: {}", &elf.path);
-        let elf_file = config::load_elf_file(&elf.path);
+        let elf_file = config::load_elf_file_vec(&elf.path);
 
         assert_eq!(elf_file.version, elf.version, "Version mismatch");
         assert_eq!(elf_file.class, elf.class.0, "Class mismatch");
@@ -39,6 +39,17 @@ fn read_elf_headers() {
             "Flags mismatch {:x} {:x}",
             elf_file.flags, elf.flags
         );
+
+        // Load using a file for all the variants and check that they're the
+        // same as above.
+        let elf_file2 = config::load_elf_file(&elf.path);
+        assert_eq!(elf_file2.version, elf_file.version);
+        assert_eq!(elf_file2.class, elf_file.class);
+        assert_eq!(elf_file2.data, elf_file.data);
+        assert_eq!(elf_file2.osabi, elf_file.osabi);
+        assert_eq!(elf_file2.version, elf_file.version);
+        assert_eq!(elf_file2.exec_type, elf_file.exec_type);
+        assert_eq!(elf_file2.flags, elf_file.flags);
     }
 }
 
@@ -248,4 +259,10 @@ fn very_small_file_64() {
         let elf_file = ReadElf::from_slice(&buff.as_slice()[0..i]);
         assert!(elf_file.is_none(), "Valid file with length {}", i);
     }
+}
+
+#[test]
+fn file_nonexistent() {
+    let elf_file = ReadElf::open("nonexistent.elf");
+    assert!(elf_file.is_none());
 }

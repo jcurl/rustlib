@@ -12,6 +12,7 @@ impl<'elf> Slice<'elf> {
 }
 
 impl<'elf> BinParser for Slice<'elf> {
+    #[inline(always)]
     fn get_u8(&self, offset: u64) -> Option<u8> {
         if self.buffer.len() < std::mem::size_of::<u8>() || offset >= self.buffer.len() as u64 {
             return None;
@@ -19,6 +20,7 @@ impl<'elf> BinParser for Slice<'elf> {
         Some(self.buffer[offset as usize])
     }
 
+    #[inline(always)]
     fn get_u16(&self, offset: u64, e: Endian) -> Option<u16> {
         if self.buffer.len() < std::mem::size_of::<u16>()
             || offset > (self.buffer.len() - std::mem::size_of::<u16>()) as u64
@@ -35,6 +37,7 @@ impl<'elf> BinParser for Slice<'elf> {
         }
     }
 
+    #[inline(always)]
     fn get_u32(&self, offset: u64, e: Endian) -> Option<u32> {
         if self.buffer.len() < std::mem::size_of::<u32>()
             || offset > (self.buffer.len() - std::mem::size_of::<u32>()) as u64
@@ -51,6 +54,7 @@ impl<'elf> BinParser for Slice<'elf> {
         }
     }
 
+    #[inline(always)]
     fn get_u64(&self, offset: u64, e: Endian) -> Option<u64> {
         if self.buffer.len() < std::mem::size_of::<u64>()
             || offset > (self.buffer.len() - std::mem::size_of::<u64>()) as u64

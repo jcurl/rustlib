@@ -6,7 +6,7 @@ applications can consume.
 - [1. Goals of ReadElf](#1-goals-of-readelf)
 - [2. Design](#2-design)
   - [2.1. Reading an ELF File](#21-reading-an-elf-file)
-  - [2.2. Dynamic Behaviour of the File](#22-dynamic-behaviour-of-the-file)
+    - [2.1.1. Dynamic Behaviour of the File](#211-dynamic-behaviour-of-the-file)
 - [3. Test Cases](#3-test-cases)
   - [3.1. ELF Headers](#31-elf-headers)
 
@@ -30,7 +30,7 @@ file, it shouldn't depend on the Operating System to read the ELF file.
 
 The intent is to make it easy to read an ELF file, just by opening it. It should
 implement the `Drop` trait if required for closing the handle. The `Drop` trait
-makes the object non-copyable (but should implement the `Clone` trait also).
+makes the object non-copyable.
 
 By keeping the file open, the interpretation of the ELF file is _lazy_. It is
 possible to give it a buffer via `from_*()`, or a file via `open()`. When
@@ -38,13 +38,13 @@ opening a buffer, the maximum size of the ELF file is `usize`.
 
 ![](./assets/readelf/readelf.svg)
 
-The `open` and `from_*` methods return an instance of the `struct ReadElf`, or
-return an `None`.
+The `open()` and `from_*()` methods return an instance of the `struct ReadElf`,
+or return an `None`.
 
-### 2.2. Dynamic Behaviour of the File
+#### 2.1.1. Dynamic Behaviour of the File
 
-Then `open()` and `open_file()` methods use the same logic for interpreting an
-ELF file. The difference comes down to how the file is read:
+Then `open()` and `from_*()` methods use the same logic for interpreting an ELF
+file. The difference comes down to how the file is read:
 
 - Using a memory buffer, which then accesses the values as references inside the
   slice; or
