@@ -1,6 +1,6 @@
 @startuml readelf_buffer
 
-+class ReadElf {
++struct ReadElf {
     .. <<methods>> ..
     +from_slice(buffer: &[u8]): Option<ReadElf>
     +from_vec(buffer: Vec<u8>): Option<ReadElf>
@@ -15,7 +15,7 @@
     +get_usize(offset: u64, Endian: e, Class: c): Option<u64>
 }
 
-~class Slice {
+~struct Slice {
     ~new(buffer: &[u8]): Slice
     +get_u8(offset: u64, Endian: e): Option<u8>
     +get_u16(offset: u64, Endian: e): Option<u16>
@@ -23,7 +23,7 @@
     +get_u64(offset: u64, Endian: e): Option<u64>
 }
 
-~class VecBuffer {
+~struct VecBuffer {
     ~new(buffer: Vec<u8>): VecBuffer
     +get_u8(offset: u64, Endian: e): Option<u8>
     +get_u16(offset: u64, Endian: e): Option<u16>
@@ -31,7 +31,7 @@
     +get_u64(offset: u64, Endian: e): Option<u64>
 }
 
-~class File {
+~struct File {
     ~open<P: AsRef<Path>>(path: P): Option<File>
     +get_u8(offset: u64, Endian: e): Option<u8>
     +get_u16(offset: u64, Endian: e): Option<u16>

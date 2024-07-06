@@ -31,7 +31,13 @@ pub use executable_type::ExecutableType;
 mod machine;
 pub use machine::Machine;
 
+mod segment_type;
+pub use segment_type::SegmentType;
+
+mod segment_flags;
+pub use segment_flags::SegmentFlags;
+
 mod readelf;
-pub use readelf::ReadElf;
+pub use readelf::{ProgramHeader, ProgramHeaders, ReadElf};
 
 mod binparser;

@@ -1,6 +1,6 @@
 @startuml readelf
 
-+class ReadElf {
++struct ReadElf {
     .. <<fields>> ..
     +class: Class
     +data: Endian
@@ -20,6 +20,7 @@
 +enum Endian {
     .. <<methods>> ..
     +try_from(v: u8): Result<Endian, ()>
+    +to_string()
     .. <<variants>> ..
     +Little = 1
     +Big = 2
@@ -28,13 +29,14 @@
 +enum Class {
     .. <<methods>> ..
     +try_from(v: u8): Result<Class, ()>
+    +to_string()
     .. <<variants>> ..
     +Elf32 = 1
     +Elf64 = 2
     +Unknown(value: u8)
 }
 
-+class OsAbi as "OsAbi\n(ELFOSABI_*)" {
++struct OsAbi as "OsAbi\n(ELFOSABI_*)" {
     .. <<methods>> ..
     +os_abi(): u8
     +from(v: u8): OsAbi
@@ -68,7 +70,7 @@
     +Unknown(value: u16)
 }
 
-+class Machine as "Machine\n(EM_*)" {
++struct Machine as "Machine\n(EM_*)" {
     .. <<methods>> ..
     +machine(): u16
     +from(v: u16): Machine

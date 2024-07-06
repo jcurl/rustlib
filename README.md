@@ -40,5 +40,5 @@ repository, where the `Cargo.toml` file is found.
 
 The libraries provided:
 
-* readelf - simple library to read the contents of an ELF file
+- [readelf](./readelf/README.md) - simple library to read the contents of an ELF file
 

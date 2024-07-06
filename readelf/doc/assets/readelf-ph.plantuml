@@ -1,0 +1,66 @@
+@startuml readelf_ph
+
++interface Iterator {
+    +next(&mut self): Option<Self::Item>
+}
+
++struct ReadElf {
+    .. <<methods>> ..
+    +program_headers(): ProgramHeaders
+}
+
++struct ProgramHeaders<Item=ProgramHeader> {
+    .. <<Iterator>> ..
+    +next(&mut self): Option<ProgramHeader>
+    +size_hint(&self): (usize, Option<usize>)
+    .. <<methods>> ..
+    +len(&self): usize
+    +is_empty(&self): bool
+}
+
++struct ProgramHeader {
+    segment_type: SegmentType
+    flags: SegmentFlags
+    file_offset: u64
+    virtual_address: u64
+    physical_address: u64
+    file_size: u64
+    memory_size: u64
+    alignment: u64
+    .. <<methods>> ..
+    is_aligned(): bool
+}
+
++enum SegmentType {
+    .. <<methods>> ..
+    +from(v: u32): SegmentType
+    +to_string()
+    .. <<variants>> ..
+    +Null = 0
+    +Load = 1
+    +Dynamic = 2
+    +Interpretor = 3
+    +Note = 4
+    +ShLib = 5
+    +PHdr = 6
+    +Tls = 7
+    +Unknown(value: u32)
+}
+
++struct SegmentFlags {
+    .. <<methods>> ..
+    +from(v: u32): SegmentFlags
+    +flags(): u32
+    +to_string()
+    .. <<constants>> ..
+    +X = 1
+    +W = 2
+    +R = 4
+}
+
+ReadElf -r-> ProgramHeaders : <<create>>
+Iterator <|.d. ProgramHeaders
+ProgramHeaders -r-> ProgramHeader : <<create>>
+ProgramHeader *-d- SegmentType
+ProgramHeader *-d- SegmentFlags
+@enduml

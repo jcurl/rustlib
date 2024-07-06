@@ -3,6 +3,12 @@ use crate::{Class, Endian, ExecutableType, Machine, OsAbi};
 use std::fmt;
 use std::path::Path;
 
+mod program_header;
+pub use program_header::ProgramHeader;
+
+mod program_headers;
+pub use program_headers::ProgramHeaders;
+
 /// Properties of an ELF file when loaded into memory.
 ///
 /// The methods for this class read the source lazily. It will only access the
@@ -233,6 +239,11 @@ impl<'elf> ReadElf<'elf> {
     pub fn open<P: AsRef<Path>>(path: P) -> Option<ReadElf<'elf>> {
         let p = Box::new(binparser::File::open(path)?);
         Self::from_parser(p)
+    }
+
+    /// Get an iterator for all the program headers in the ELF file.
+    pub fn program_headers(&'elf self) -> ProgramHeaders<'elf> {
+        ProgramHeaders::new(self)
     }
 }
 

@@ -23,6 +23,34 @@ use std::fmt;
 /// let v: u16 = e.into();
 /// println!("EF_REL has value {}", v);
 /// ```
+///
+/// # Handling Unknown Types
+///
+/// If an unknown executable type is found in the ELF file, the value is given
+/// the variant `Unknown`. If in the future this value is defined, it will lead
+/// a new enum variant, and no longer being part of the `Unknown` variant. To
+/// keep your software forward compatible, you should not match to the `Unknown`
+/// variant, and instead capture all that is not known and convert to an
+/// integer, then checking the value. For example
+///
+/// ```rust
+/// use readelf::ExecutableType;
+/// let e = ExecutableType::from(10);
+///
+/// match e {
+///   ExecutableType::Executable => println!("Executable"),
+///   ExecutableType::Dynamic => println!("Dynamic"),
+///   _ => {
+///     // Note, we don't match Unknown(v) here.
+///     let v = u16::from(e);
+///     if v == 4 {
+///       println!("Core");
+///     } else {
+///       println!("Unknown {}", v);
+///     }
+///   }
+/// }
+/// ```
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(u16)]
 pub enum ExecutableType {
