@@ -1,4 +1,4 @@
-use super::{Class, ProgramHeader, ReadElf};
+use crate::{Class, ProgramHeader, ReadElf, SegmentFlags, SegmentType};
 
 /// An iterator for all program headers in the ELF file.
 #[derive(Debug)]
@@ -39,6 +39,27 @@ impl<'elf> ProgramHeaders<'elf> {
     /// many readable segments or not.
     pub fn is_empty(&self) -> bool {
         self.elf.program_header_count == 0
+    }
+
+    /// Get the [ProgramHeader] at the specified index.
+    ///
+    /// Index directly into the ELF file to get the associated [ProgramHeader].
+    /// The value of `index` must be in the range of 0 to
+    /// [ProgramHeaders::len()]. If it isn't, then [Option::None] is returned.
+    /// If the index is in the range, a value of [Option::None] may still be
+    /// returned in case there is a problem with the file (corruption, or
+    /// truncated).
+    ///
+    /// Note that the `std::ops::Index` trait is not implemented, as the
+    /// [ProgramHeader] is created lazily from the ELF file.
+    pub fn index(&self, index: usize) -> Option<ProgramHeader> {
+        if index >= self.elf.program_header_count as usize {
+            None
+        } else {
+            // Can't truncate, because it must be smaller than
+            // `program_header_count`.
+            ProgramHeader::new(self.elf, index as u16)
+        }
     }
 }
 

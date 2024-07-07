@@ -9,10 +9,16 @@ applications can consume.
     - [2.1.1. Dynamic Behaviour of the File](#211-dynamic-behaviour-of-the-file)
   - [2.2. Reading the ELF Header](#22-reading-the-elf-header)
   - [2.3. Reading the Program Header](#23-reading-the-program-header)
+    - [2.3.1. Iterators](#231-iterators)
+    - [2.3.2. Indexing into the Program Header](#232-indexing-into-the-program-header)
   - [2.4. Data Types (Enum or Struct)](#24-data-types-enum-or-struct)
 - [3. Test Cases](#3-test-cases)
-  - [3.1. ELF Headers](#31-elf-headers)
-  - [3.2. ELF Builder for Integration Tests](#32-elf-builder-for-integration-tests)
+  - [3.1. Organisation of Tests](#31-organisation-of-tests)
+  - [3.2. Integration Tests](#32-integration-tests)
+    - [3.2.1. ELF Headers](#321-elf-headers)
+    - [3.2.2. ELF Builder for Integration Tests](#322-elf-builder-for-integration-tests)
+  - [3.3. Examples](#33-examples)
+    - [3.3.1. `readelf` Dump Tool](#331-readelf-dump-tool)
 
 ## 1. Goals of ReadElf
 
@@ -105,6 +111,8 @@ The minimum size for the `e_phentsize` is:
 Usually, the program headers start immediately after the ELF header, but it
 doesn't need to be.
 
+#### 2.3.1. Iterators
+
 A method `ReadElf::program_headers()` will return an `Iterator` that can be used
 to enumerate over all the program headers. The goal is to use the method similar
 to:
@@ -112,7 +120,7 @@ to:
 ```rust
 fn show_program_headers(elf: &ReadElf) {
   for ph in elf.program_headers() {
-    println!("{}", ph.type.to_string());
+    println!("{}", ph.segment_type.to_string());
   }
 }
 ```
@@ -135,11 +143,16 @@ To get the number of expected number of program header segments, use
 it's a moving operation, and in case of errors in the file, the default
 implementation from Rust would differ to the result of `len()`.
 
-TODO: We'd also like to index the content of the array directly, if we don't
-want to use iterators. The
-[Rustonomicon](https://doc.rust-lang.org/nomicon/vec/vec-final.html) shows
-something similar to a `impl Deref for ProgramHeaderIter { type Target =
-[ProgramHeader]}`. Should check if this will work.
+#### 2.3.2. Indexing into the Program Header
+
+A method `index()` is provided to get a `ProgramHeader` for a specified index.
+
+```rust
+fn show_program_headers(elf: &ReadElf) {
+  let hdr = elf.program_headers().index(0).unwrap();
+  println!("{}", hdr.segment_type.to_string());
+}
+```
 
 ### 2.4. Data Types (Enum or Struct)
 
@@ -219,7 +232,22 @@ variants not yet supported by the library.
 
 ## 3. Test Cases
 
-### 3.1. ELF Headers
+### 3.1. Organisation of Tests
+
+There are three types of test programs available in this crate:
+
+- Unit tests, which are in the same file as a new module in the source code
+  itself;
+- Integration tests, which are reading the entire ELF file using `ReadElf` to
+  test specific functionality. Not everything can be easily unit tested, as it
+  depends on the original ELF file to construct. Such an example is the
+  `ProgramHeadeers` iterator.
+- Example programs, which are another type of test, when built, can perform
+  integration tests not in this repository.
+
+### 3.2. Integration Tests
+
+#### 3.2.1. ELF Headers
 
 There are a large number of ELF header binaries in the folder
 `resources/tests/elf`. These intentionally only contain the first 64-bytes for
@@ -231,7 +259,7 @@ testing. Placing the full binary may be problematic:
 Instead, see the sources from the folder name. I downloaded the images and
 extracted the files for testing.
 
-### 3.2. ELF Builder for Integration Tests
+#### 3.2.2. ELF Builder for Integration Tests
 
 The `tests/common/builder.rs` module is a simpler builder for ELF files. Having
 a builder makes it easier to cover non-common use use cases by mocking our own
@@ -255,3 +283,9 @@ simpler to implement.
 
 This way, we use 4096 byte preallocated array upfront. It's easy to add data,
 segments and sections.
+
+### 3.3. Examples
+
+#### 3.3.1. `readelf` Dump Tool
+
+There is the [`readelf`](../examples/readelf.md)

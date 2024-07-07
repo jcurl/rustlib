@@ -672,3 +672,44 @@ fn segments_not_aligned() {
     let segments: Vec<ProgramHeader> = elf.program_headers().collect();
     assert!(!segments[1].is_aligned());
 }
+
+#[test]
+fn segments_indexed() {
+    let mut elf_builder = ElfBuilder64::new(Endian::Big);
+    elf_builder
+        .set_os_abi(OsAbi::from(OsAbi::NONE))
+        .set_abi_version(0)
+        .set_executable_type(ExecutableType::Executable)
+        .set_machine(Machine::from(Machine::X86_64))
+        .set_entry(0x1000)
+        .set_flags(0x00000000);
+    elf_builder.add_segment(&ProgramHeader {
+        segment_type: SegmentType::Null,
+        flags: SegmentFlags::from(SegmentFlags::NONE),
+        file_offset: 0,
+        virtual_address: 0,
+        physical_address: 0,
+        file_size: 0,
+        memory_size: 0,
+        alignment: 0,
+    });
+    elf_builder.add_segment(&ProgramHeader {
+        segment_type: SegmentType::Note,
+        flags: SegmentFlags::from(SegmentFlags::R),
+        file_offset: 0x12AE,
+        virtual_address: 0x23AE,
+        physical_address: 0x0000,
+        file_size: 0x1000,
+        memory_size: 0x1000,
+        alignment: 0x1000,
+    });
+
+    let elf = ReadElf::from_slice(elf_builder.buffer()).unwrap();
+
+    assert_eq!(elf.program_headers().len(), 2);
+    let segments: Vec<ProgramHeader> = elf.program_headers().collect();
+
+    assert_eq!(segments[0], elf.program_headers().index(0).unwrap());
+    assert_eq!(segments[1], elf.program_headers().index(1).unwrap());
+    assert!(elf.program_headers().index(2).is_none());
+}

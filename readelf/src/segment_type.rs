@@ -81,6 +81,22 @@ pub enum SegmentType {
     ThreadLocalStorage = 7,
 
     /// Unknown segment type.
+    ///
+    /// Don't ever match this type, instead convert to a [u32] and then check
+    /// the value:
+    ///
+    /// ```rust
+    /// # use readelf::SegmentType;
+    /// let s = u32::from(SegmentType::Unknown(8));
+    /// match s {
+    ///     5 => { println!("ShLib"); }
+    ///     _ => { println!("Other: {}", s); }
+    /// }
+    /// ```
+    ///
+    /// This is to allow new values of [SegmentType] to be added, and if your
+    /// code used the [SegmentType::Unknown] variant, it would no longer match
+    /// if it were defined in a newer library.
     Unknown(u32),
 }
 

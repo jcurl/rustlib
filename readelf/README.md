@@ -2,18 +2,15 @@
 
 A crate that knows how to read ELF files.
 
-## Building the `readelf` Binary
+## Further Documentation
 
-To build the `readelf` binary, which uses the library, and can read ELF files
-from the command line. The following example shows the help.
+### Design Information
 
-```sh
-$ cargo build --example readelf
-$ ./target/debug/examples/readelf -?
-```
+See the [detailed design](./doc/DESIGN.md) describing the structure of the code
+and the repository.
 
-The command line options supported are:
+### Examples
 
-- `?` - Show help.
-- `h` - Show the ELF header
-- `l` - Show the ELF segments
+The [readelf](./examples/readelf.md) is a simple tool to dump the contents of an
+ELF file to the console. It it essentially used for testing the library in an
+interactive way.

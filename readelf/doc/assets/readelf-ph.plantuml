@@ -5,6 +5,10 @@
 }
 
 +struct ReadElf {
+    .. <<fields>> ..
+    -program_header_offset: u64
+    -program_header_size: u16
+    -program_header_count: u16
     .. <<methods>> ..
     +program_headers(): ProgramHeaders
 }
@@ -16,6 +20,7 @@
     .. <<methods>> ..
     +len(&self): usize
     +is_empty(&self): bool
+    +index(index: usize): Option<ProgramHeader>
 }
 
 +struct ProgramHeader {

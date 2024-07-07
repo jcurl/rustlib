@@ -75,6 +75,25 @@ pub enum ExecutableType {
     /// processor specific, usually in the range of
     /// [ExecutableType::LOOS]..=[ExecutableType::HIOS] or
     /// [ExecutableType::LOPROC]..=[ExecutableType::HIPROC].
+    ///
+    /// Don't match this variant, unless in the range
+    /// [ExecutableType::LOOS]..=[ExecutableType::HIOS] or
+    /// [ExecutableType::LOPROC]..=[ExecutableType::HIPROC] (OS or Processor
+    /// specific values won't be added, including the GNU types). Instead
+    /// convert to a [u16] and then check the value:
+    ///
+    /// ```rust
+    /// # use readelf::ExecutableType;
+    /// let s = u16::from(ExecutableType::Unknown(5));
+    /// match s {
+    ///     5 => { println!("CloudExperimental"); }
+    ///     _ => { println!("Other: {}", s); }
+    /// }
+    /// ```
+    ///
+    /// This is to allow new values of [ExecutableType] to be added, and if your
+    /// code used the [ExecutableType::Unknown] variant, it would no longer
+    /// match if it were defined in a newer library.
     Unknown(u16),
 }
 

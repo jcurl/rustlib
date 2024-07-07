@@ -1,7 +1,7 @@
 use crate::{Class, ReadElf, SegmentFlags, SegmentType};
 
 /// Describes a segment on how an OS creates a process image.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ProgramHeader {
     /// Identifies the type of the segment.
     pub segment_type: SegmentType,
