@@ -1,5 +1,8 @@
 use super::{Class, Endian};
 
+mod buffer;
+pub(crate) use buffer::Buffer;
+
 mod slice;
 pub(crate) use slice::Slice;
 
@@ -62,4 +65,10 @@ pub(crate) trait BinParser {
             Class::Elf64 => self.get_u64(offset, e),
         }
     }
+
+    /// Get a reference to the memory owned by the ELF file.
+    ///
+    /// Returns a buffer (which is either read from on disk, or referenced from
+    /// the buffer already in memory).
+    fn get_map(&self, offset: u64, len: usize) -> Option<Buffer<'_>>;
 }

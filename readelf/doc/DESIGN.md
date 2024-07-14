@@ -9,14 +9,16 @@ applications can consume.
     - [2.1.1. Dynamic Behaviour of the File](#211-dynamic-behaviour-of-the-file)
   - [2.2. Reading the ELF Header](#22-reading-the-elf-header)
   - [2.3. Reading the Program Header](#23-reading-the-program-header)
-    - [2.3.1. Iterators](#231-iterators)
+    - [2.3.1. Program Header Iterators](#231-program-header-iterators)
     - [2.3.2. Indexing into the Program Header](#232-indexing-into-the-program-header)
-  - [2.4. Data Types (Enum or Struct)](#24-data-types-enum-or-struct)
+  - [2.4. Reading Section Headers](#24-reading-section-headers)
+    - [2.4.1. Section Header Iterators](#241-section-header-iterators)
+    - [2.4.2. The Section Name](#242-the-section-name)
+    - [2.4.3. Decoding Sections for the Name of the Section](#243-decoding-sections-for-the-name-of-the-section)
+  - [2.5. Data Types (Enum or Struct)](#25-data-types-enum-or-struct)
 - [3. Test Cases](#3-test-cases)
   - [3.1. Organisation of Tests](#31-organisation-of-tests)
   - [3.2. Integration Tests](#32-integration-tests)
-    - [3.2.1. ELF Headers](#321-elf-headers)
-    - [3.2.2. ELF Builder for Integration Tests](#322-elf-builder-for-integration-tests)
   - [3.3. Examples](#33-examples)
     - [3.3.1. `readelf` Dump Tool](#331-readelf-dump-tool)
 
@@ -111,7 +113,7 @@ The minimum size for the `e_phentsize` is:
 Usually, the program headers start immediately after the ELF header, but it
 doesn't need to be.
 
-#### 2.3.1. Iterators
+#### 2.3.1. Program Header Iterators
 
 A method `ReadElf::program_headers()` will return an `Iterator` that can be used
 to enumerate over all the program headers. The goal is to use the method similar
@@ -154,7 +156,83 @@ fn show_program_headers(elf: &ReadElf) {
 }
 ```
 
-### 2.4. Data Types (Enum or Struct)
+### 2.4. Reading Section Headers
+
+The layout (size and ordering of the fields) of the section header depends on if
+it is an ELF-32 or ELF-64. Each section header entry is of a fixed size defined
+by `e_shentsize`, making the data structure at offset `e_shoff` an array of
+`e_shnum` elements.
+
+The minimum size for the `e_shentsize` is:
+
+| Data         | Length    |
+| ------------ | --------- |
+| ELF32 (0x01) | 0x28 (40) |
+| ELF64 (0x02) | 0x40 (64) |
+
+#### 2.4.1. Section Header Iterators
+
+The design for iterating over section headers is (for consistency) very similar
+to that of program headers. The section headers is an array in the ELF file,
+which can be directly indexed.
+
+![](./assets/readelf-sh/readelf_sh.svg)
+
+#### 2.4.2. The Section Name
+
+The section name is read from the section with index `e_shstrndx` from the
+section table. That section must be decoded and the contents loaded into memory.
+Once in memory, the section `sh_name` is an offset into this section where the
+C-String begins (and ends with a `NUL` terminator).
+
+It must be noted that:
+
+- The `e_shstrndx` must be a valid index in the range of `0..e_shnum`.
+- Of course it must be in the file and loadable via the `sh_offset` and is of
+  size `sh_size`.
+- A string offset in the section must not necessarily point to the beginning of
+  a string (it can reuse a string, or point to the middle of another string).
+  This means we can't just read the section and parse all strings without
+  knowing the offset prior.
+
+#### 2.4.3. Decoding Sections for the Name of the Section
+
+Obtaining the section names requires decoding the string section. A new `struct
+StringsSection` that takes a `SectionHeader` is required. The `SectionHeader`
+has the ranges in the ELF file to know what to read.
+
+The trait `BinParser` will have the method `get_map` that will return a slice
+(contained within `enum Buffer`) with the contents of the string section. For
+the `binparser::slice::Slice` and `binparser::vecbuffer::VecBuffer`, this will
+be an immutable reference to the existing buffer. For `binparser::file::File`,
+it will create a new buffer and read the contents to disk. This puts the
+restriction that the size of the section must be sufficiently small to fit in
+memory of the process.
+
+![](./assets/readelf-sh-decode/readelf_sh_decode.svg)
+
+The cyclic dependency of having a `SectionHeader` first without a
+`StringSection` is resolved by passing a `Option<StringSection>` to the
+`SectionHeader::new()`. Should no `StringSection` be provided, the
+`SectionHeader::name` is `None`. Thus, to iterate over the sections and get the
+names of the sections:
+
+- Get the section at index `ReadElf::string_section_index`, with no names.
+- Create the `StringSection`, which loads (if necessary) the section into memory.
+- The `SectionHeaders` now iterates from `0..ReadElf::section_header_count`
+  getting each section, giving the constructor the `StringSection`, which it can
+  use to convert the `CStr` to a rust `String`.
+
+It is assumed that the section names are in UTF-8, a NUL terminated c-string. If
+this is not the case, the string at the given offset will be `None`.
+
+The `enum Buffer` is needed for safe Rust. It either contains a reference to
+within the buffer that the `BinParser` already owns (e.g. from a slice or a
+vector), or returns a new buffer if it isn't in memory already. It's not
+possible to return a `&[u8]` as something must own that memory, of which the
+`binparser::file::File` shouldn't own.
+
+### 2.5. Data Types (Enum or Struct)
 
 In C, the values of fields are constants only, typically defined with a
 `#define`. Under rust, a choice was made to either define an `enum` (such as
@@ -220,7 +298,7 @@ same instead for `Unknown(v)` values:
 
 ```rust
 let t = SegmentType::from(8);
-if t == u32::from(t) == 8 {
+if u32::from(t) == 8 {
   println!("SegmentType: NEW_SEGMENT");
 }
 ```
@@ -247,42 +325,8 @@ There are three types of test programs available in this crate:
 
 ### 3.2. Integration Tests
 
-#### 3.2.1. ELF Headers
-
-There are a large number of ELF header binaries in the folder
-`resources/tests/elf`. These intentionally only contain the first 64-bytes for
-testing. Placing the full binary may be problematic:
-
-- Binaries in GIT are not ideal;
-- avoid copyright information
-
-Instead, see the sources from the folder name. I downloaded the images and
-extracted the files for testing.
-
-#### 3.2.2. ELF Builder for Integration Tests
-
-The `tests/common/builder.rs` module is a simpler builder for ELF files. Having
-a builder makes it easier to cover non-common use use cases by mocking our own
-ELF files and also injecting errors.
-
-The structure of the fictitious ELF file is determined upfront to make it
-simpler to implement.
-
-```text
-                                 Offset (32 / 64-bit)
-+------------------------------+
-| ELF Header (52 or 64 bytes)  |  0x0000
-+------------------------------+
-| Array of Segments            |  0x0034 (32-bit) / 0x0040 (64-bit)
-+------------------------------+
-| Array of Sections            |  0x0400 - 0x07FF
-+------------------------------+
-| Data for Segments / Sections |  0x0800 - 0x1FFF
-+------------------------------+
-```
-
-This way, we use 4096 byte preallocated array upfront. It's easy to add data,
-segments and sections.
+For information about the structure of the integration tests, refer to
+[README.md](../tests/README.md).
 
 ### 3.3. Examples
 

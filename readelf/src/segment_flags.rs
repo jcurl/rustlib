@@ -32,7 +32,7 @@ impl SegmentFlags {
 
     /// Get the byte representation of the OS ABI in the ELF file.
     #[must_use]
-    pub fn flags(&self) -> u32 {
+    pub const fn flags(&self) -> u32 {
         self.flags
     }
 }

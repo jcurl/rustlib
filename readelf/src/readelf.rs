@@ -1,13 +1,23 @@
-use crate::binparser;
 use crate::{Class, Endian, ExecutableType, Machine, OsAbi};
 use std::fmt;
 use std::path::Path;
+
+use crate::binparser::{self, BinParser};
 
 mod program_header;
 pub use program_header::ProgramHeader;
 
 mod program_headers;
 pub use program_headers::ProgramHeaders;
+
+mod section_header;
+pub use section_header::SectionHeader;
+
+mod section_headers;
+pub use section_headers::SectionHeaders;
+
+mod string_section;
+use string_section::StringSection;
 
 /// Properties of an ELF file when loaded into memory.
 ///
@@ -112,7 +122,7 @@ pub struct ReadElf<'elf> {
     /// This value repesents `e_shstrndx`.
     string_section_index: u16,
 
-    parser: Box<dyn binparser::BinParser + 'elf>,
+    parser: Box<dyn BinParser + 'elf>,
 }
 
 impl<'elf> fmt::Debug for ReadElf<'elf> {
@@ -137,7 +147,7 @@ impl<'elf> fmt::Debug for ReadElf<'elf> {
         // 7   | pub struct ReadElf<'elf> {
         //     |                    ---- lifetime `'elf` defined here
         // ...
-        // 106 |     parser: Box<dyn binparser::BinParser + 'elf>,
+        // 106 |     parser: Box<dyn BinParser + 'elf>,
         //     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ cast requires that `'elf` must outlive `'static`
         //     |
         //     = note: this error originates in the derive macro `Debug` (in Nightly builds, run with -Z macro-backtrace for more info)
@@ -170,7 +180,7 @@ impl<'elf> ReadElf<'elf> {
 
     fn from_parser<T>(p: Box<T>) -> Option<ReadElf<'elf>>
     where
-        T: binparser::BinParser + 'elf,
+        T: BinParser + 'elf,
     {
         // The signature of the ELF must file be 0x7F ELF.
         if p.get_u8(0)? != 0x7F
@@ -244,6 +254,11 @@ impl<'elf> ReadElf<'elf> {
     /// Get an iterator for all the program headers in the ELF file.
     pub fn program_headers(&'elf self) -> ProgramHeaders<'elf> {
         ProgramHeaders::new(self)
+    }
+
+    /// Get an iterator for all the section headers in the ELF file.
+    pub fn section_headers(&'elf self) -> SectionHeaders<'elf> {
+        SectionHeaders::new(self)
     }
 }
 

@@ -1,0 +1,101 @@
+@startuml readelf_sh
+
++interface Iterator {
+    +next(&mut self): Option<Self::Item>
+}
+
++struct ReadElf {
+    .. <<fields>> ..
+    -section_header_offset: u64
+    -section_header_size: u16
+    -section_header_count: u16
+    -string_section_index: u16
+    .. <<methods>> ..
+    +section_headers(): SectionHeaders
+}
+
++struct SectionHeaders<Item=SectionHeader> {
+    .. <<Constructor>> ..
+    #new(elf: &ReadElf): SectionHeaders
+    .. <<Iterator>> ..
+    +next(&mut self): Option<SectionHeader>
+    +size_hint(&self): (usize, Option<usize>)
+    .. <<methods>> ..
+    +len(&self): usize
+    +is_empty(&self): bool
+    +index(index: usize): Option<SectionHeader>
+}
+
++struct SectionHeader {
+    .. <<Constructor>> ..
+    #new(elf: &ReadElf; index: u16; strings: Option<StringSection>):\n Option<SectionHeader>
+    .. <<fields>> ..
+    +name: Option<String>
+    +section_type: SectionType
+    +flags: SectionFlags
+    +virtual_address: u64
+    +file_offset: u64
+    +file_size: u64
+    +section_link: u32
+    +section_info: u32
+    +alignment: u64
+    +entry_size: u64
+}
+
++enum SectionType as "SectionType\n(SHT_*)" {
+    .. <<methods>> ..
+    +from(v: u32): SectionType
+    +to_string()
+    .. <<variants>> ..
+    +Null = 0
+    +ProgBits = 1
+    +SymTab = 2
+    +StrTab = 3
+    +RelA = 4
+    +Hash = 5
+    +Dynamic = 6
+    +Note = 7
+    +NoBits = 8
+    +Rel = 9
+    +ShLib = 10
+    +DynSym = 11
+    +InitArray = 14
+    +FiniArray = 15
+    +PreInitArray = 16
+    +Group = 17
+    +SymTabIndex = 18
+    +Unknown(value: u32)
+}
+
++struct SectionFlags as "SectionFlags\n(SHF_*)" {
+    .. <<methods>> ..
+    +from(v: u64): SectionFlags
+    +flags(): u64
+    +to_string()
+    .. <<constants>> ..
+    +WRITE = 0x00000001
+    +ALLOC = 0x00000002
+    +EXECINSTR = 0x00000004
+    +MERGE = 0x00000010
+    +STRINGS = 0x00000020
+    +INFO_LINK = 0x00000040
+    +LINK_ORDER = 0x00000080
+    +OS_NONCONFORMING = 0x00000100
+    +GROUP = 0x00000200
+    +TLS = 0x00000400
+    +MASKOS = 0x0FF00000
+    +MASKPROC = 0xF0000000
+}
+note left
+Solaris defines additionally, but won't
+be "officially" supported:
+- ORDERED = 0x04000000
+- EXCLUDE = 0x08000000
+end note
+
+ReadElf -r-> SectionHeaders : <<create>>
+Iterator <|.d. SectionHeaders
+SectionHeaders -r-> SectionHeader : <<create>>
+SectionHeader *-d- SectionType
+SectionHeader *-d- SectionFlags
+@enduml

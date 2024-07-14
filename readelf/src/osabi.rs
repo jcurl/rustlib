@@ -93,7 +93,7 @@ impl OsAbi {
 
     /// Get the byte representation of the OS ABI in the ELF file.
     #[must_use]
-    pub fn os_abi(&self) -> u8 {
+    pub const fn os_abi(&self) -> u8 {
         self.os_abi
     }
 }

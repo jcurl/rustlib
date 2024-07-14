@@ -1,4 +1,4 @@
-use super::{BinParser, Endian};
+use super::{BinParser, Buffer, Endian};
 
 pub(crate) struct Slice<'elf> {
     buffer: &'elf [u8],
@@ -69,6 +69,13 @@ impl<'elf> BinParser for Slice<'elf> {
             Endian::Little => Some(u64::from_le_bytes(slice)),
             Endian::Big => Some(u64::from_be_bytes(slice)),
         }
+    }
+
+    fn get_map(&self, offset: u64, len: usize) -> Option<Buffer<'_>> {
+        let start = offset as usize;
+        let end = offset as usize + len;
+        let buffer = self.buffer.get(start..end);
+        buffer.map(Buffer::AsRef)
     }
 }
 
@@ -250,7 +257,7 @@ mod tests {
         assert_eq!(buffer_3.get_u64(u64::MAX, Endian::Big), None);
         assert_eq!(buffer_3.get_u64(u64::MAX, Endian::Little), None);
 
-        let buffer_4 = Slice::new(&TEST_BUFFER_3);
+        let buffer_4 = Slice::new(&TEST_BUFFER_4);
         assert_eq!(buffer_4.get_u64(0, Endian::Big), None);
         assert_eq!(buffer_4.get_u64(0, Endian::Little), None);
         assert_eq!(buffer_4.get_u64(4, Endian::Big), None);
@@ -278,5 +285,47 @@ mod tests {
         assert_eq!(buffer_8.get_u64(8, Endian::Little), None);
         assert_eq!(buffer_8.get_u64(u64::MAX, Endian::Big), None);
         assert_eq!(buffer_8.get_u64(u64::MAX, Endian::Little), None);
+    }
+
+    #[test]
+    fn test_get_map() {
+        let buffer = Slice::new(&TEST_BUFFER);
+
+        let buffer_1 = buffer.get_map(4, 4).unwrap();
+        assert!(buffer_1.is_ref());
+        let slice_1 = buffer_1.buffer();
+        assert_eq!(slice_1.len(), 4);
+        assert_eq!(slice_1[0], 5);
+        assert_eq!(slice_1[1], 6);
+        assert_eq!(slice_1[2], 7);
+        assert_eq!(slice_1[3], 8);
+
+        let buffer_2 = buffer.get_map(0, 10).unwrap();
+        assert!(buffer_2.is_ref());
+        let slice_2 = buffer_2.buffer();
+        assert_eq!(slice_2.len(), 10);
+        assert_eq!(slice_2[0], 1);
+        assert_eq!(slice_2[1], 2);
+        assert_eq!(slice_2[2], 3);
+        assert_eq!(slice_2[3], 4);
+
+        let buffer_3 = buffer.get_map(6, 4).unwrap();
+        assert!(buffer_3.is_ref());
+        let slice_3 = buffer_3.buffer();
+        assert_eq!(slice_3.len(), 4);
+        assert_eq!(slice_3[0], 7);
+        assert_eq!(slice_3[1], 8);
+        assert_eq!(slice_3[2], 9);
+        assert_eq!(slice_3[3], 10);
+    }
+
+    #[test]
+    fn test_get_map_partial() {
+        let buffer = Slice::new(&TEST_BUFFER);
+
+        assert!(buffer.get_map(0, 11).is_none());
+        assert!(buffer.get_map(4, 10).is_none());
+        assert!(buffer.get_map(4, 7).is_none());
+        assert!(buffer.get_map(10, 1).is_none());
     }
 }

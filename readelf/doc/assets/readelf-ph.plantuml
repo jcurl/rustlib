@@ -14,6 +14,8 @@
 }
 
 +struct ProgramHeaders<Item=ProgramHeader> {
+    .. <<Constructor>> ..
+    #new(elf: &ReadElf): ProgramHeaders
     .. <<Iterator>> ..
     +next(&mut self): Option<ProgramHeader>
     +size_hint(&self): (usize, Option<usize>)
@@ -24,19 +26,22 @@
 }
 
 +struct ProgramHeader {
-    segment_type: SegmentType
-    flags: SegmentFlags
-    file_offset: u64
-    virtual_address: u64
-    physical_address: u64
-    file_size: u64
-    memory_size: u64
-    alignment: u64
+    .. <<Constructor>> ..
+    #new(elf: &ReadElf; index: u16): Option<ProgramHeader>
+    .. <<fields>> ..
+    +segment_type: SegmentType
+    +flags: SegmentFlags
+    +file_offset: u64
+    +virtual_address: u64
+    +physical_address: u64
+    +file_size: u64
+    +memory_size: u64
+    +alignment: u64
     .. <<methods>> ..
-    is_aligned(): bool
+    +is_aligned(): bool
 }
 
-+enum SegmentType {
++enum SegmentType as "SegmentType\n(PT_*)" {
     .. <<methods>> ..
     +from(v: u32): SegmentType
     +to_string()
@@ -52,7 +57,7 @@
     +Unknown(value: u32)
 }
 
-+struct SegmentFlags {
++struct SegmentFlags as "SegmentFlags\n(PF_*)" {
     .. <<methods>> ..
     +from(v: u32): SegmentFlags
     +flags(): u32

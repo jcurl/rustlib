@@ -37,7 +37,13 @@ pub use segment_type::SegmentType;
 mod segment_flags;
 pub use segment_flags::SegmentFlags;
 
-mod readelf;
-pub use readelf::{ProgramHeader, ProgramHeaders, ReadElf};
+mod section_type;
+pub use section_type::SectionType;
+
+mod section_flags;
+pub use section_flags::SectionFlags;
 
 mod binparser;
+
+mod readelf;
+pub use readelf::{ProgramHeader, ProgramHeaders, ReadElf, SectionHeader, SectionHeaders};

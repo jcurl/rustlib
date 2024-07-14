@@ -1,4 +1,4 @@
-use super::{BinParser, Endian};
+use super::{BinParser, Buffer, Endian};
 use std::cell::RefCell;
 use std::io::*;
 use std::path::Path;
@@ -17,7 +17,6 @@ impl File {
 }
 
 impl BinParser for File {
-    #[inline(always)]
     fn get_u8(&self, offset: u64) -> Option<u8> {
         let mut elf = self.elf.borrow_mut();
         elf.seek(SeekFrom::Start(offset)).ok()?;
@@ -28,7 +27,6 @@ impl BinParser for File {
         Some(buff[0])
     }
 
-    #[inline(always)]
     fn get_u16(&self, offset: u64, e: Endian) -> Option<u16> {
         let mut elf = self.elf.borrow_mut();
         elf.seek(SeekFrom::Start(offset)).ok()?;
@@ -42,7 +40,6 @@ impl BinParser for File {
         }
     }
 
-    #[inline(always)]
     fn get_u32(&self, offset: u64, e: Endian) -> Option<u32> {
         let mut elf = self.elf.borrow_mut();
         elf.seek(SeekFrom::Start(offset)).ok()?;
@@ -56,7 +53,6 @@ impl BinParser for File {
         }
     }
 
-    #[inline(always)]
     fn get_u64(&self, offset: u64, e: Endian) -> Option<u64> {
         let mut elf = self.elf.borrow_mut();
         elf.seek(SeekFrom::Start(offset)).ok()?;
@@ -68,6 +64,28 @@ impl BinParser for File {
             Endian::Little => Some(u64::from_le_bytes(buff)),
             Endian::Big => Some(u64::from_be_bytes(buff)),
         }
+    }
+
+    fn get_map(&self, offset: u64, len: usize) -> Option<Buffer<'_>> {
+        let mut elf = self.elf.borrow_mut();
+        elf.seek(SeekFrom::Start(offset)).ok()?;
+
+        let mut buf: Vec<u8> = Vec::with_capacity(len);
+
+        // Safe because
+        // - we set the capacity, and then set the length which is equal or less
+        //   than the capacity; and
+        // - The data is initialised by reading it from a file.
+        //
+        // Faster because we don't need to zero out the buffer first, which will
+        // then be replaced with content from the file.
+        #[allow(clippy::uninit_vec)]
+        unsafe {
+            buf.set_len(len)
+        };
+
+        elf.read_exact(&mut buf[..len]).ok()?;
+        Some(Buffer::Owning(buf))
     }
 }
 
@@ -158,5 +176,46 @@ mod tests {
         assert_eq!(buffer.get_u64(64, Endian::Big), None);
         assert_eq!(buffer.get_u64(u64::MAX, Endian::Big), None);
         assert_eq!(buffer.get_u64(u64::MAX - 1, Endian::Big), None);
+    }
+
+    #[test]
+    fn test_get_map() {
+        let buffer = File::open(test_resource_path("elf/debian-9.13.0-i386-netinst/bash")).unwrap();
+
+        let buffer_1 = buffer.get_map(4, 4).unwrap();
+        assert!(buffer_1.is_owned());
+        let slice_1 = buffer_1.buffer();
+        assert_eq!(slice_1.len(), 4);
+        assert_eq!(slice_1[0], 0x01);
+        assert_eq!(slice_1[1], 0x01);
+        assert_eq!(slice_1[2], 0x01);
+        assert_eq!(slice_1[3], 0x00);
+
+        let buffer_2 = buffer.get_map(0, 64).unwrap();
+        assert!(buffer_2.is_owned());
+        let slice_2 = buffer_2.buffer();
+        assert_eq!(slice_2.len(), 64);
+        assert_eq!(slice_2[0], 0x7F);
+        assert_eq!(slice_2[1], 0x45);
+        assert_eq!(slice_2[2], 0x4C);
+        assert_eq!(slice_2[3], 0x46);
+
+        let buffer_3 = buffer.get_map(60, 4).unwrap();
+        assert!(buffer_3.is_owned());
+        let slice_3 = buffer_3.buffer();
+        assert_eq!(slice_3.len(), 4);
+        assert_eq!(slice_3[0], 0x34);
+        assert_eq!(slice_3[1], 0x80);
+        assert_eq!(slice_3[2], 0x04);
+        assert_eq!(slice_3[3], 0x08);
+    }
+
+    #[test]
+    fn test_get_map_partial() {
+        let buffer = File::open(test_resource_path("elf/debian-9.13.0-i386-netinst/bash")).unwrap();
+        assert!(buffer.get_map(0, 65).is_none());
+        assert!(buffer.get_map(4, 64).is_none());
+        assert!(buffer.get_map(4, 61).is_none());
+        assert!(buffer.get_map(64, 1).is_none());
     }
 }

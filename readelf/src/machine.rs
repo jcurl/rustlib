@@ -834,7 +834,7 @@ impl Machine {
 
     /// Get the byte representation of the OS ABI in the ELF file.
     #[must_use]
-    pub fn machine(&self) -> u16 {
+    pub const fn machine(&self) -> u16 {
         self.machine
     }
 

@@ -1,0 +1,50 @@
+@startuml readelf_sh_decode
+
++struct ReadElf {
+    .. <<fields>> ..
+    -parser: Box<dyn binparser::BinParser>
+    -string_section_index: u16
+    .. <<methods>> ..
+    +section_headers(): SectionHeaders
+}
+
++interface BinParser {
+    +get_map(offset: u64, size: usize): Option<Buffer>
+}
+
++enum Buffer {
+    .. <<variants>> ..
+    +AsRef(&[u8])
+    +Owning(Vec<u8>)
+    .. <<methods>> ..
+    +is_ref(): bool
+    +is_owned(): bool
+    +buffer(): &[u8]
+}
+
++struct SectionHeaders<Item=SectionHeader> {
+    .. <<methods>> ..
+    +as_string_section(&self, index: usize): StringSection
+}
+
++struct StringSection {
+    .. <<Constructor>> ..
+    #new(section: SectionHeader): Option<StringSection>
+    .. <<methods>> ..
+    +from_offset(offset: usize): Option<String>
+}
+
++struct SectionHeader {
+    #new(elf; ReadElf; index: usize; strings: Option<StringSection>):\n Option<SectionHeader>
+}
+
+ReadElf -r-> SectionHeaders : <<create>>
+ReadElf *-d- BinParser
+SectionHeaders -r-> SectionHeader : <<create>>
+SectionHeaders -d-> StringSection : <<create>>
+SectionHeader o-d- StringSection : <<uses>>
+StringSection -l-> BinParser : <<uses>>
+BinParser -d-> Buffer : <<create>>
+StringSection *-d- Buffer
+
+@enduml

@@ -1,4 +1,4 @@
-use crate::{Class, ProgramHeader, ReadElf, SegmentFlags, SegmentType};
+use crate::{Class, ProgramHeader, ReadElf};
 
 /// An iterator for all program headers in the ELF file.
 #[derive(Debug)]
